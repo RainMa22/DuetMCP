@@ -10,7 +10,7 @@ import java.util.Map;
 /**
  *
  */
-public class DownloadUtils {
+public class Downloader {
 
     private static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36 Edg/134.0.0.0";
     private static HttpClient client = null;
@@ -35,13 +35,30 @@ public class DownloadUtils {
             if (response.statusCode() == 200) {
                 return response.body();
             } else {
-                get(uri, header);
+                return get(uri, header);
             }
         } else if (response.statusCode() / 100 == 3) {
             return get(uri.resolve(URI.create(response.headers().firstValue("location").orElse(""))));
         }
         throw new IOException("Unexpected status code: " + response.statusCode() + System.lineSeparator()
                 + response.body());
+
+    }
+
+    public static String post(URI uri, Map<String, String> header, String Data) throws IOException, InterruptedException {
+        if (client == null) {
+            client = HttpClient.newHttpClient();
+        }
+        var builder = HttpRequest
+                .newBuilder(uri)
+                .header("User-Agent", USER_AGENT);
+        header.forEach((k, v) -> builder.header(k, v));
+        var req = builder.POST(HttpRequest.BodyPublishers.ofString(Data))
+                .build();
+        HttpResponse<String> response = client.send(req,
+                HttpResponse.BodyHandlers.ofString());
+        System.out.println(String.format("[%s %s] %d", "POST", uri, response.statusCode()));
+        return response.body();
 
     }
 

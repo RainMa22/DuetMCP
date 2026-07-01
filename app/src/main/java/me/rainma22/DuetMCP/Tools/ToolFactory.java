@@ -19,10 +19,6 @@ public class ToolFactory {
     }
     private static final ToolEntry DEFALT_TOOL_ENTRY = new ToolEntry(Map.of(), new Tool() {
         @Override
-        public void onLoad() {
-        }
-
-        @Override
         public JSONObject apply(UserContext param1, JSONObject param2) throws BadRequestException {
             throw new UnsupportedOperationException("Not supported yet."); 
         }
