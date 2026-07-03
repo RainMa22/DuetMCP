@@ -2,6 +2,7 @@ package me.rainma22.DuetMCP.Tools.InternetTools.search;
 
 import java.io.IOException;
 import java.net.URI;
+import java.net.URLEncoder;
 import java.text.MessageFormat;
 import java.util.List;
 import java.util.Map;
@@ -40,9 +41,8 @@ public class DirectSearchTool extends InternetSearchTool {
             logger.log(System.Logger.Level.WARNING, "using direct HTML result of website, which is extremely token-inefficient.");
         }
         try {
-            String query = args.optString("query");
-            query = query == null ? "" : query;
-            URI uri = URI.create(baseUrl.replace("<|query|>", query));
+            String query = args.optString("query", "");
+            URI uri = URI.create(baseUrl.replace("<|query|>", URLEncoder.encode(query, "UTF-8")));
             String res = Downloader.get(uri).toString();
 
             return new JSONObject(Map.of(
