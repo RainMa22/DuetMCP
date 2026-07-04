@@ -18,14 +18,16 @@ public class InternetFetchToolPlugin implements ToolPlugin {
         final Map<String, Object> INFO = Map.of(
                 "name", "duet_InternetFetch",
                 "title", "Web Resource Fetching",
-                "description", "fetch an internet resource using HTTP GET; \n"
-                + "when adding parameters to the url, "
-                + "make sure to URL-encode your parameters",
+                "description", "Fetch an internet resource using HTTP GET; \n"
+                + "Remember to prefix the url with http or https.\n"
+                + "When adding parameters to the url, "
+                + "make sure to URL-encode your parameters.",
                 "inputSchema", Map.of(
                         "type", "object",
                         "properties", Map.of("url", Map.of("type", "string",
                                 "description", "URL of the web resource"))),
-                "required", List.of("url"));
+                 "required", List.of("url")
+        );
 //        final Map<String, Object> apiDefault = Map.of(
 //                "vendor", ExaAPI.VENDOR_NAME,
 //                "API_KEY", ""
