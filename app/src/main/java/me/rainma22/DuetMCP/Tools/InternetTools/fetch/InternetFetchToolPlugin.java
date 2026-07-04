@@ -5,7 +5,6 @@ import java.util.Map;
 import me.rainma22.DuetMCP.Tools.ToolFactory;
 import me.rainma22.DuetMCP.Tools.ToolPlugin;
 import me.rainma22.DuetMCP.Utils.ConfigurationManager;
-import me.rainma22.DuetMCP.Utils.ExaAPI;
 
 /**
  *
@@ -17,32 +16,35 @@ public class InternetFetchToolPlugin implements ToolPlugin {
     @Override
     public void onLoad() {
         final Map<String, Object> INFO = Map.of(
-                "name", "internetFetch",
+                "name", "duet_InternetFetch",
                 "title", "Web Resource Fetching",
-                "description", "fetch an internet resource",
+                "description", "fetch an internet resource using HTTP GET; \n"
+                + "when adding parameters to the url, "
+                + "make sure to URL-encode your parameters",
                 "inputSchema", Map.of(
                         "type", "object",
                         "properties", Map.of("url", Map.of("type", "string",
                                 "description", "URL of the web resource"))),
                 "required", List.of("url"));
-        final Map<String, Object> apiDefault = Map.of(
-                "vendor", ExaAPI.VENDOR_NAME,
-                "API_KEY", ""
-        );
+//        final Map<String, Object> apiDefault = Map.of(
+//                "vendor", ExaAPI.VENDOR_NAME,
+//                "API_KEY", ""
+//        );
         final Map<String, Object> downloadDefault = Map.of(
                 "type", "direct download"
         );
         final Map<String, Object> defaultConfig = Map.of(
                 "type", "direct download",
-                "api_setting", apiDefault,
+                //                "api_setting", apiDefault,
                 "download_setting", downloadDefault
         );
         var conf = ConfigurationManager.ofClass(this.getClass()).getConfig(defaultConfig);
         switch (conf.getString("type")) {
-            case "api":
-                ToolFactory.registerTool(INFO.get("name").toString(), INFO, new ApiFetchTool(conf.getJSONObject("api_setting")));
-                break;
+//            case "api":
+//                ToolFactory.registerTool(INFO.get("name").toString(), INFO, new ApiFetchTool(conf.getJSONObject("api_setting")));
+//                break;
             default:
+                logger.log(System.Logger.Level.WARNING, String.format("Unsupported type %s", conf.getString("type")));
                 logger.log(System.Logger.Level.WARNING, "defaulting to direct download...");
             //fallthrough
             case "direct download":
