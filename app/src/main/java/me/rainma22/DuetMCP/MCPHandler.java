@@ -44,6 +44,10 @@ public class MCPHandler implements HttpHandler {
         } catch (UnsupportedOperationException uoe) {
             response = Response.ofError(null, null, JSONRPCCodes.RPC_SERVER_ERROR_GENERAL, uoe.getMessage());
             httpStatus = JSONRPCCodes.HTTP_SERVER_ERROR;
+        } catch (Exception e){
+//            e.printStackTrace();
+            response = Response.ofError(null, null, JSONRPCCodes.RPC_SERVER_ERROR_GENERAL, e.getMessage());
+            httpStatus = JSONRPCCodes.HTTP_SERVER_ERROR;
         }
         return new Result(httpStatus, response);
     }
