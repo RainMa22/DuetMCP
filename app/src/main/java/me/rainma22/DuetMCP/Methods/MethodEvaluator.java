@@ -1,8 +1,11 @@
 package me.rainma22.DuetMCP.Methods;
 
+import me.rainma22.DuetMCP.Methods.notifications.NotificationInitialized;
 import java.util.Map;
 import me.rainma22.DuetMCP.UserContext;
 import me.rainma22.DuetMCP.Exception.BadRequestException;
+import me.rainma22.DuetMCP.Methods.notifications.Notification;
+import me.rainma22.DuetMCP.Methods.notifications.NotificationProcessor;
 import me.rainma22.DuetMCP.Tools.ToolFactory;
 import me.rainma22.DuetMCP.Utils.ServerInfo;
 import org.json.JSONException;
@@ -55,8 +58,9 @@ public class MethodEvaluator implements MethodVisitor<JSONObject, BadRequestExce
     }
 
     @Override
-    public JSONObject visit(NotificationInitialized ni) throws BadRequestException {
-        return null;
+    public JSONObject visit(Notification ni) throws BadRequestException {
+        NotificationProcessor np = new NotificationProcessor(ctx);
+        return ni.accept(np);
     }
 
     @Override

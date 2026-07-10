@@ -1,5 +1,6 @@
 package me.rainma22.DuetMCP.Methods;
 
+import me.rainma22.DuetMCP.Methods.notifications.NotificationInitialized;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.function.Function;

@@ -1,5 +1,7 @@
 package me.rainma22.DuetMCP.Methods;
 
+import me.rainma22.DuetMCP.Methods.notifications.Notification;
+
 /**
  *
  */
@@ -9,7 +11,7 @@ public interface MethodVisitor<T, E extends Exception> {
 
     T visit(InitializeMethod im) throws E;
 
-    T visit(NotificationInitialized ni) throws E;
+    T visit(Notification ni) throws E;
 
     T visit(PingMethod pm) throws E;
 
