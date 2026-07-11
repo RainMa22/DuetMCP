@@ -77,16 +77,11 @@ public class MCPHandler implements HttpHandler {
         }
         InputStream reqBody = exchange.getRequestBody();
         Result response;
-        UUID uuid;
 
         try {
-            try {
-                String sessionStr = reqHeaders.getFirst(MCPConstants.MCP_SESSION_ID_STRING);
-                uuid = UUID.fromString(sessionStr == null ? "" : sessionStr);
-            } catch (IllegalArgumentException iae) {
-                uuid = null;
-            }
-            UserContext ctx = SessionManager.getInstance().getContextOf(uuid)
+            String sessionStr = reqHeaders.getFirst(MCPConstants.MCP_SESSION_ID_STRING);
+
+            UserContext ctx = SessionManager.getInstance().getContextOf(sessionStr)
                     .orElse(new UserContext());
             MethodEvaluator evaluator = new MethodEvaluator(ctx);
             response = new Result(JSONRPCCodes.HTTP_SUCCESS, null);
@@ -113,13 +108,12 @@ public class MCPHandler implements HttpHandler {
                 response = handleSingular(evaluator, new JSONObject(reqString));
             }
             logger.log(System.Logger.Level.INFO, "result:" + response.result);
-            var sessionId = ctx.sessionId;
             var outBytes = (response.result == null) ? new byte[0] : response.result.toString().getBytes("UTF-8");
             var outStream = exchange.getResponseBody();
             exchange.getResponseHeaders().set("Content-Type", "application/json");
-            if (sessionId != null) {
+            if (sessionStr != null) {
                 exchange.getResponseHeaders().set(MCPConstants.MCP_SESSION_ID_STRING,
-                        sessionId.toString());
+                        sessionStr);
             }
             exchange.sendResponseHeaders(response.httpStatus, outBytes.length);
             outStream.write(outBytes);

@@ -16,17 +16,17 @@ public class SessionManager {
         return manager;
     };
     
-    private Map<UUID, UserContext> SessionMap = new WeakHashMap<>();
+    private Map<String, UserContext> SessionMap = WeakHashMap.newWeakHashMap(512);
     public UUID newSession(UserContext ctx){
         var id = UUID.randomUUID();
         ctx.sessionId = id;
-        SessionMap.put(id, ctx);
+        SessionMap.put(id.toString(), ctx);
         return id;
     }
     
-    public Optional<UserContext> getContextOf(UUID id){
+    public Optional<UserContext> getContextOf(String id){
         if(id == null) return Optional.empty();
-        return Optional.ofNullable(SessionMap.get(id));
+        return Optional.ofNullable(SessionMap.getOrDefault(id, null));
     }
     
 }
