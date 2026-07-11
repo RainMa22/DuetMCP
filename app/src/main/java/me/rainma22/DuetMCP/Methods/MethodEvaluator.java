@@ -8,6 +8,7 @@ import me.rainma22.DuetMCP.Methods.notifications.Notification;
 import me.rainma22.DuetMCP.Methods.notifications.NotificationProcessor;
 import me.rainma22.DuetMCP.Tools.ToolFactory;
 import me.rainma22.DuetMCP.Utils.ServerInfo;
+import me.rainma22.DuetMCP.Utils.SessionManager;
 import org.json.JSONException;
 import org.json.JSONObject;
 
@@ -46,6 +47,7 @@ public class MethodEvaluator implements MethodVisitor<JSONObject, BadRequestExce
                 ctx.supportsSampling = clientCapabilities.opt("sampling") != null;
                 ctx.supportsElicitation = clientCapabilities.opt("elicitation") != null;
             }
+            SessionManager.getInstance().newSession(ctx);
             result.put("protocolVersion", ctx.version);
             result.put("capabilities", ServerInfo.CAPABILITY_JSON);
             result.put("serverInfo", ServerInfo.SERVER_INFO_JSON);

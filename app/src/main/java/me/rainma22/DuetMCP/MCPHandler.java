@@ -4,9 +4,14 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.HttpURLConnection;
+import java.util.List;
+import java.util.UUID;
 import me.rainma22.DuetMCP.Exception.BadRequestException;
 import me.rainma22.DuetMCP.Methods.MethodEvaluator;
 import me.rainma22.DuetMCP.Utils.JSONRPCCodes;
+import me.rainma22.DuetMCP.Utils.MCPConstants;
+import me.rainma22.DuetMCP.Utils.SessionManager;
 import org.json.JSONArray;
 import org.json.JSONException;
 import org.json.JSONObject;
@@ -32,7 +37,13 @@ public class MCPHandler implements HttpHandler {
             }
             Request request = Request.wrap(obj);
             String id = obj.optString("id");
-            response = Response.ofSuccess(id, request.getMethod().accept(evaluator));
+            var reqEvaluation = request.getMethod().accept(evaluator);
+            if (reqEvaluation != null) {
+                response = Response.ofSuccess(id, reqEvaluation);
+            } else {
+                httpStatus = HttpURLConnection.HTTP_ACCEPTED;
+                response = null;
+            }
         } catch (BadRequestException bre) {
             response = Response.ofError(obj.optString("id"), obj.optString("method"),
                     JSONRPCCodes.RPC_INVALID_PARAMS, bre.getMessage());
@@ -44,7 +55,7 @@ public class MCPHandler implements HttpHandler {
         } catch (UnsupportedOperationException uoe) {
             response = Response.ofError(null, null, JSONRPCCodes.RPC_SERVER_ERROR_GENERAL, uoe.getMessage());
             httpStatus = JSONRPCCodes.HTTP_SERVER_ERROR;
-        } catch (Exception e){
+        } catch (Exception e) {
 //            e.printStackTrace();
             response = Response.ofError(null, null, JSONRPCCodes.RPC_SERVER_ERROR_GENERAL, e.getMessage());
             httpStatus = JSONRPCCodes.HTTP_SERVER_ERROR;
@@ -54,11 +65,30 @@ public class MCPHandler implements HttpHandler {
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
+        String ReqMethod = exchange.getRequestMethod().toLowerCase();
+        var reqHeaders = exchange.getRequestHeaders();
+        if (ReqMethod.equals("get") && reqHeaders
+                .getOrDefault("Accept", List.of())
+                .contains("text/event-stream")) {
+//            https://modelcontextprotocol.io/specification/2025-06-18/basic/transports#listening-for-messages-from-the-server
+//            EventStream not supported yet
+            exchange.sendResponseHeaders(JSONRPCCodes.HTTP_METHOD_NOT_ALLOWED, 0);
+            exchange.close();
+        }
         InputStream reqBody = exchange.getRequestBody();
         Result response;
-        MethodEvaluator evaluator = new MethodEvaluator(new UserContext());
+        UUID uuid;
 
         try {
+            try {
+                String sessionStr = reqHeaders.getFirst(MCPConstants.MCP_SESSION_ID_STRING);
+                uuid = UUID.fromString(sessionStr == null ? "" : sessionStr);
+            } catch (IllegalArgumentException iae) {
+                uuid = null;
+            }
+            UserContext ctx = SessionManager.getInstance().getContextOf(uuid)
+                    .orElse(new UserContext());
+            MethodEvaluator evaluator = new MethodEvaluator(ctx);
             response = new Result(JSONRPCCodes.HTTP_SUCCESS, null);
             String reqString = new String(reqBody.readAllBytes());
             logger.log(System.Logger.Level.INFO, "received:" + reqString);
@@ -83,15 +113,22 @@ public class MCPHandler implements HttpHandler {
                 response = handleSingular(evaluator, new JSONObject(reqString));
             }
             logger.log(System.Logger.Level.INFO, "result:" + response.result);
-
-            var outBytes = response.result.toString().getBytes("UTF-8");
+            var sessionId = ctx.sessionId;
+            var outBytes = (response.result == null) ? new byte[0] : response.result.toString().getBytes("UTF-8");
             var outStream = exchange.getResponseBody();
             exchange.getResponseHeaders().set("Content-Type", "application/json");
+            if (sessionId != null) {
+                exchange.getResponseHeaders().set(MCPConstants.MCP_SESSION_ID_STRING,
+                        sessionId.toString());
+            }
             exchange.sendResponseHeaders(response.httpStatus, outBytes.length);
             outStream.write(outBytes);
-            outStream.close();
-        } catch (IOException ie) {
-            ie.printStackTrace(System.err);
+            outStream.flush();
+        } catch (Exception e) {
+            logger.log(System.Logger.Level.ERROR, "ERROR!");
+            logger.log(System.Logger.Level.ERROR, null, "{0}", e);            
+
+            exchange.close();
         }
     }
 }
