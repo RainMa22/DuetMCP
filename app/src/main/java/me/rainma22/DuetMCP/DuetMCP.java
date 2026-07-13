@@ -15,11 +15,13 @@ import me.rainma22.DuetMCP.Plugins.PluginManager;
 import me.rainma22.DuetMCP.Tools.InternetTools.fetch.InternetFetchToolPlugin;
 import me.rainma22.DuetMCP.Tools.ToolPlugin;
 import me.rainma22.DuetMCP.Utils.ConfigurationManager;
+import me.rainma22.DuetMCP.Utils.SessionManager;
 
 public class DuetMCP {
 
     private static final Map DEFAULT_CONFIG = Map.of("port", 9090,
-            "loadBuiltinTools", List.of(InternetFetchToolPlugin.class.getCanonicalName())
+            "loadBuiltinTools", List.of(InternetFetchToolPlugin.class.getCanonicalName()),
+            "Session_maxConcurrentEntry", 512
     );
 
     public static void main(String[] args) throws IOException {
@@ -28,7 +30,10 @@ public class DuetMCP {
         var conf = ConfigurationManager.ofClass(DuetMCP.class)
                 .getConfig(DEFAULT_CONFIG);
         int port = conf.getInt("port");
-
+        
+        // set Session mapping size here
+        var nSessionMapping = conf.getInt("Session_maxConcurrentEntry");
+        SessionManager.setNumMappings(nSessionMapping);
         PluginManager.getInstance().loadPlugins(Path.of(".", "plugin"));
 
         for (var classname : conf.getJSONArray("loadBuiltinTools")) {

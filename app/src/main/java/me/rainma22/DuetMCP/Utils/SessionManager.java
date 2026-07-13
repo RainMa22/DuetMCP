@@ -10,23 +10,38 @@ import me.rainma22.DuetMCP.UserContext;
  *
  */
 public class SessionManager {
-    private static SessionManager manager = null;
-    public static SessionManager getInstance(){
-        if(manager == null) manager = new SessionManager();
-        return manager;
-    };
     
-    private Map<String, UserContext> SessionMap = WeakHashMap.newWeakHashMap(512);
-    public UUID newSession(UserContext ctx){
+    private static SessionManager manager = null;
+    
+    public static void setNumMappings(int nMappings) {
+        if (manager != null) {
+            var oldMap = manager.sessionMap;
+            manager.sessionMap = new WeakHashMap<>(nMappings);
+            manager.sessionMap.putAll(oldMap);
+        }
+    }
+    
+    public static SessionManager getInstance() {
+        if (manager == null) {
+            manager = new SessionManager();
+        }
+        return manager;
+    }
+
+    private Map<String, UserContext> sessionMap = new WeakHashMap<>(512);
+    
+    public UUID newSession(UserContext ctx) {
         var id = UUID.randomUUID();
         ctx.sessionId = id;
-        SessionMap.put(id.toString(), ctx);
+        sessionMap.put(id.toString(), ctx);
         return id;
     }
     
-    public Optional<UserContext> getContextOf(String id){
-        if(id == null) return Optional.empty();
-        return Optional.ofNullable(SessionMap.getOrDefault(id, null));
+    public Optional<UserContext> getContextOf(String id) {
+        if (id == null) {
+            return Optional.empty();
+        }
+        return Optional.ofNullable(sessionMap.getOrDefault(id, null));
     }
     
 }

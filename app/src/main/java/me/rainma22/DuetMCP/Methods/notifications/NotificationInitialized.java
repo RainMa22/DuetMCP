@@ -1,6 +1,5 @@
 package me.rainma22.DuetMCP.Methods.notifications;
 
-import me.rainma22.DuetMCP.Methods.MethodVisitor;
 import org.json.JSONObject;
 
 /**

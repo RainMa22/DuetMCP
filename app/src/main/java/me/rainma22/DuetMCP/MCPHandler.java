@@ -118,6 +118,7 @@ public class MCPHandler implements HttpHandler {
             exchange.sendResponseHeaders(response.httpStatus, outBytes.length);
             outStream.write(outBytes);
             outStream.flush();
+            outStream.close();
         } catch (Exception e) {
             logger.log(System.Logger.Level.ERROR, "ERROR!");
             logger.log(System.Logger.Level.ERROR, null, "{0}", e);            
