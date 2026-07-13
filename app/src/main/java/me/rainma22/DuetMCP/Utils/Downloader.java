@@ -11,7 +11,8 @@ import java.util.Map;
  *
  */
 public class Downloader {
-
+    
+    private static final System.Logger LOGGER = System.getLogger(Downloader.class.getName());
     private static final String USER_AGENT = "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/134.0.0.0 Safari/537.36 Edg/134.0.0.0";
     private static HttpClient client = null;
 
@@ -30,16 +31,19 @@ public class Downloader {
         var req = builder.GET().build();
         HttpResponse<String> response = client.send(req,
                 HttpResponse.BodyHandlers.ofString());
-        System.out.println(String.format("[%s %s] %d", "GET", uri, response.statusCode()));
-        if (response.statusCode() / 100 == 2) {
-            if (response.statusCode() == 200) {
-                return response.body();
-            } else {
-                return get(uri, header);
-            }
-        } else if (response.statusCode() / 100 == 3) {
+        LOGGER.log(System.Logger.Level.INFO,
+                String.format("[%s %s] %d %s", 
+                        "GET", 
+                        uri, 
+                        response.statusCode(),
+                        response.statusCode() == 200 ? response: ""));
+        if (response.statusCode() == 200) {
+            return response.body();
+        } else if(response.statusCode() > 200 && response.statusCode() < 300) {
+            return get(uri, header);
+        } else if (response.statusCode() >= 300 && response.statusCode() < 400) {
             return get(uri.resolve(URI.create(response.headers().firstValue("location").orElse(""))));
-        }
+        } 
         throw new IOException("Unexpected status code: " + response.statusCode() + System.lineSeparator()
                 + response.body());
 
