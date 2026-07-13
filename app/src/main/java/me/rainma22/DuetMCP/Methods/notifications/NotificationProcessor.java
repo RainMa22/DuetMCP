@@ -1,13 +1,14 @@
 package me.rainma22.DuetMCP.Methods.notifications;
 
 import me.rainma22.DuetMCP.Exception.BadRequestException;
+import me.rainma22.DuetMCP.Exception.DuetMCPException;
 import me.rainma22.DuetMCP.UserContext;
 import org.json.JSONObject;
 
 /**
  *
  */
-public class NotificationProcessor implements NotificationVisitor<JSONObject, BadRequestException>{
+public class NotificationProcessor implements NotificationVisitor<JSONObject, DuetMCPException>{
     private UserContext uctx; 
     
     public NotificationProcessor(UserContext uctx){

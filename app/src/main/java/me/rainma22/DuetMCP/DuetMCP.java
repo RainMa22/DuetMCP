@@ -11,16 +11,20 @@ import java.nio.file.Path;
 import java.text.MessageFormat;
 import java.util.List;
 import java.util.Map;
+import me.rainma22.DuetMCP.Plugins.Plugin;
 import me.rainma22.DuetMCP.Plugins.PluginManager;
-import me.rainma22.DuetMCP.Tools.InternetTools.fetch.InternetFetchToolPlugin;
+import me.rainma22.DuetMCP.Tools.builtins.fetch.InternetFetchToolPlugin;
 import me.rainma22.DuetMCP.Tools.ToolPlugin;
+import me.rainma22.DuetMCP.Tools.builtins.time.TimeToolPlugin;
 import me.rainma22.DuetMCP.Utils.ConfigurationManager;
 import me.rainma22.DuetMCP.Utils.SessionManager;
 
 public class DuetMCP {
 
     private static final Map DEFAULT_CONFIG = Map.of("port", 9090,
-            "loadBuiltinTools", List.of(InternetFetchToolPlugin.class.getCanonicalName()),
+            "loadBuiltinTools", List.of(
+                    InternetFetchToolPlugin.class.getCanonicalName(),
+                    TimeToolPlugin.class.getCanonicalName()),
             "Session_maxConcurrentEntry", 512
     );
 
@@ -43,7 +47,7 @@ public class DuetMCP {
             logger.log(System.Logger.Level.INFO,
                     "loading " + classname.toString());
             try {
-                Class<? extends ToolPlugin> c = (Class<? extends ToolPlugin>) ClassLoader.getSystemClassLoader()
+                Class<? extends Plugin> c = (Class<? extends ToolPlugin>) ClassLoader.getSystemClassLoader()
                         .loadClass(classname.toString());
                 c.getDeclaredConstructor()
                         .newInstance()

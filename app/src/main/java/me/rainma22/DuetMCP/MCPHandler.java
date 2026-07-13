@@ -8,6 +8,7 @@ import java.net.HttpURLConnection;
 import java.util.List;
 import java.util.UUID;
 import me.rainma22.DuetMCP.Exception.BadRequestException;
+import me.rainma22.DuetMCP.Exception.DuetMCPException;
 import me.rainma22.DuetMCP.Methods.MethodEvaluator;
 import me.rainma22.DuetMCP.Utils.JSONRPCCodes;
 import me.rainma22.DuetMCP.Utils.MCPConstants;
@@ -52,7 +53,7 @@ public class MCPHandler implements HttpHandler {
             response = Response.ofError(null, null, JSONRPCCodes.RPC_PARSE_ERROR,
                     je.getMessage());
             httpStatus = JSONRPCCodes.HTTP_INVALID_REQUEST;
-        } catch (UnsupportedOperationException uoe) {
+        } catch (DuetMCPException | UnsupportedOperationException uoe) {
             response = Response.ofError(null, null, JSONRPCCodes.RPC_SERVER_ERROR_GENERAL, uoe.getMessage());
             httpStatus = JSONRPCCodes.HTTP_SERVER_ERROR;
         } catch (Exception e) {
@@ -74,6 +75,7 @@ public class MCPHandler implements HttpHandler {
 //            EventStream not supported yet
             exchange.sendResponseHeaders(JSONRPCCodes.HTTP_METHOD_NOT_ALLOWED, 0);
             exchange.close();
+            return;
         }
         InputStream reqBody = exchange.getRequestBody();
         Result response;

@@ -1,4 +1,4 @@
-package me.rainma22.DuetMCP.Tools.InternetTools.fetch;
+package me.rainma22.DuetMCP.Tools.builtins.fetch;
 
 import java.util.List;
 import java.util.Map;

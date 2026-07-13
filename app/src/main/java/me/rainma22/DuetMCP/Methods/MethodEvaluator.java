@@ -1,9 +1,9 @@
 package me.rainma22.DuetMCP.Methods;
 
-import me.rainma22.DuetMCP.Methods.notifications.NotificationInitialized;
 import java.util.Map;
 import me.rainma22.DuetMCP.UserContext;
 import me.rainma22.DuetMCP.Exception.BadRequestException;
+import me.rainma22.DuetMCP.Exception.DuetMCPException;
 import me.rainma22.DuetMCP.Methods.notifications.Notification;
 import me.rainma22.DuetMCP.Methods.notifications.NotificationProcessor;
 import me.rainma22.DuetMCP.Tools.ToolFactory;
@@ -15,7 +15,7 @@ import org.json.JSONObject;
 /**
  *
  */
-public class MethodEvaluator implements MethodVisitor<JSONObject, BadRequestException> {
+public class MethodEvaluator implements MethodVisitor<JSONObject, DuetMCPException> {
 
     private UserContext ctx;
 
@@ -29,7 +29,7 @@ public class MethodEvaluator implements MethodVisitor<JSONObject, BadRequestExce
     }
 
     @Override
-    public JSONObject visit(InitializeMethod im) throws BadRequestException {
+    public JSONObject visit(InitializeMethod im) throws DuetMCPException {
         JSONObject result = new JSONObject();
         try {
             var params = im.getParams();
@@ -60,23 +60,23 @@ public class MethodEvaluator implements MethodVisitor<JSONObject, BadRequestExce
     }
 
     @Override
-    public JSONObject visit(Notification ni) throws BadRequestException {
+    public JSONObject visit(Notification ni) throws DuetMCPException {
         NotificationProcessor np = new NotificationProcessor(ctx);
         return ni.accept(np);
     }
 
     @Override
-    public JSONObject visit(PingMethod pm) throws BadRequestException {
+    public JSONObject visit(PingMethod pm) throws DuetMCPException {
         return new JSONObject();
     }
 
     @Override
-    public JSONObject visit(ToolsListMethod tlm) throws BadRequestException {
+    public JSONObject visit(ToolsListMethod tlm) throws DuetMCPException {
         return new JSONObject(Map.of("tools", ToolFactory.availableTools()));
     }
 
     @Override
-    public JSONObject visit(ToolsCallMethod tcm) throws BadRequestException {
+    public JSONObject visit(ToolsCallMethod tcm) throws DuetMCPException {
         var params = tcm.getParams();
         var args =  params.optJSONObject("arguments");
         return ToolFactory.fromString(params.getString("name")).apply(ctx, args);
