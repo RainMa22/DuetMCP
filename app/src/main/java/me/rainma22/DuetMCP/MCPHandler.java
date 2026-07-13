@@ -6,6 +6,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import me.rainma22.DuetMCP.Exception.BadRequestException;
 import me.rainma22.DuetMCP.Exception.DuetMCPException;
@@ -20,7 +21,11 @@ import org.json.JSONObject;
 public class MCPHandler implements HttpHandler {
 
     private final System.Logger logger = System.getLogger(this.getClass().getName());
-
+    private static final Map<String,String> CORS_HEADER = Map.of(
+        "Access-Control-Allow-Origin", "*",
+        "Access-Control-Allow-Methods", "GET, POST, OPTIONS",
+        "Access-Control-Allow-Headers", "*",
+        "Access-Control-Max-Age", "86400");
     private static record Result(int httpStatus, Object result) {
 
     }
@@ -66,9 +71,16 @@ public class MCPHandler implements HttpHandler {
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
-        String ReqMethod = exchange.getRequestMethod().toLowerCase();
+        
+        String reqMethod = exchange.getRequestMethod().toLowerCase();
         var reqHeaders = exchange.getRequestHeaders();
-        if (ReqMethod.equals("get") && reqHeaders
+        CORS_HEADER.forEach((k, v) -> exchange.getResponseHeaders().add(k, v));
+        if (reqMethod.equals("options")){
+            exchange.sendResponseHeaders(JSONRPCCodes.HTTP_SUCCESS, 0);
+            exchange.close();
+            return;
+        }
+        if (reqMethod.equals("get") && reqHeaders
                 .getOrDefault("Accept", List.of())
                 .contains("text/event-stream")) {
 //            https://modelcontextprotocol.io/specification/2025-06-18/basic/transports#listening-for-messages-from-the-server
