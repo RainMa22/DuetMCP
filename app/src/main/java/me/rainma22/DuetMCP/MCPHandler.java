@@ -7,6 +7,7 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.util.List;
 import java.util.Map;
+import java.util.StringJoiner;
 import java.util.UUID;
 import me.rainma22.DuetMCP.Exception.BadRequestException;
 import me.rainma22.DuetMCP.Exception.DuetMCPException;
@@ -21,11 +22,12 @@ import org.json.JSONObject;
 public class MCPHandler implements HttpHandler {
 
     private final System.Logger logger = System.getLogger(this.getClass().getName());
-    private static final Map<String,String> CORS_HEADER = Map.of(
-        "Access-Control-Allow-Origin", "*",
-        "Access-Control-Allow-Methods", "GET, POST, OPTIONS",
-        "Access-Control-Allow-Headers", "*",
-        "Access-Control-Max-Age", "86400");
+    private static final Map<String, String> CORS_HEADER = Map.of(
+            "Access-Control-Allow-Origin", "*",
+            "Access-Control-Allow-Methods", "GET, POST, OPTIONS",
+            "Access-Control-Allow-Headers", "*",
+            "Access-Control-Max-Age", "86400");
+
     private static record Result(int httpStatus, Object result) {
 
     }
@@ -71,73 +73,83 @@ public class MCPHandler implements HttpHandler {
 
     @Override
     public void handle(HttpExchange exchange) throws IOException {
-        
-        String reqMethod = exchange.getRequestMethod().toLowerCase();
-        var reqHeaders = exchange.getRequestHeaders();
-        CORS_HEADER.forEach((k, v) -> exchange.getResponseHeaders().add(k, v));
-        if (reqMethod.equals("options")){
-            exchange.sendResponseHeaders(JSONRPCCodes.HTTP_SUCCESS, 0);
-            exchange.close();
-            return;
-        }
-        if (reqMethod.equals("get") && reqHeaders
-                .getOrDefault("Accept", List.of())
-                .contains("text/event-stream")) {
+        boolean shouldTerminate = false;
+        while (!shouldTerminate) {
+            String reqMethod = exchange.getRequestMethod().toLowerCase();
+            var reqHeaders = exchange.getRequestHeaders();
+            CORS_HEADER.forEach((k, v) -> exchange.getResponseHeaders().add(k, v));
+            if (reqMethod.equals("options")) {
+                exchange.sendResponseHeaders(JSONRPCCodes.HTTP_SUCCESS, 0);
+                shouldTerminate = true;
+                break;
+            }
+            StringJoiner sj = new StringJoiner("\n");
+            reqHeaders.forEach((k, vs) -> vs.forEach((v) -> sj.add(k + ": " + v)));
+            logger.log(System.Logger.Level.INFO, "Received {0} request with Header {1}", 
+                    reqMethod, sj);
+            if (reqMethod.equals("get") && reqHeaders
+                    .getOrDefault("Accept", List.of())
+                    .contains("text/event-stream")) {
 //            https://modelcontextprotocol.io/specification/2025-06-18/basic/transports#listening-for-messages-from-the-server
 //            EventStream not supported yet
-            exchange.sendResponseHeaders(JSONRPCCodes.HTTP_METHOD_NOT_ALLOWED, 0);
-            exchange.close();
-            return;
-        }
-        InputStream reqBody = exchange.getRequestBody();
-        Result response;
+                exchange.sendResponseHeaders(JSONRPCCodes.HTTP_METHOD_NOT_ALLOWED, 0);
+                shouldTerminate = true; 
+                logger.log(System.Logger.Level.INFO, "event stream not supported");
+                break;
+            }
+            InputStream reqBody = exchange.getRequestBody();
+            Result response;
 
-        try {
-            String sessionStr = reqHeaders.getFirst(MCPConstants.MCP_SESSION_ID_STRING);
+            try {
+                String sessionStr = reqHeaders.getFirst(MCPConstants.MCP_SESSION_ID_STRING);
 
-            UserContext ctx = SessionManager.getInstance().getContextOf(sessionStr)
-                    .orElse(new UserContext());
-            MethodEvaluator evaluator = new MethodEvaluator(ctx);
-            response = new Result(JSONRPCCodes.HTTP_SUCCESS, null);
-            String reqString = new String(reqBody.readAllBytes());
-            logger.log(System.Logger.Level.INFO, "received:" + reqString);
-            if (reqString.replaceAll(" ", "").startsWith("[")) {
-                JSONArray arr = new JSONArray(reqString);
-                JSONArray out = new JSONArray();
-                for (int i = 0; i < arr.length(); i++) {
-                    try {
-                        Object singularResult = handleSingular(evaluator, arr.get(i)).result;
-                        if (singularResult == null) {
-                            continue;
+                UserContext ctx = SessionManager.getInstance().getContextOf(sessionStr)
+                        .orElse(new UserContext());
+                MethodEvaluator evaluator = new MethodEvaluator(ctx);
+                response = new Result(JSONRPCCodes.HTTP_SUCCESS, null);
+                String reqString = new String(reqBody.readAllBytes());
+                logger.log(System.Logger.Level.INFO, "received:" + reqString);
+                if (reqString.replaceAll(" ", "").startsWith("[")) {
+                    JSONArray arr = new JSONArray(reqString);
+                    JSONArray out = new JSONArray();
+                    for (int i = 0; i < arr.length(); i++) {
+                        try {
+                            Object singularResult = handleSingular(evaluator, arr.get(i)).result;
+                            if (singularResult == null) {
+                                continue;
+                            }
+                            out.put(singularResult);
+                        } catch (JSONException je) {
+                            out.put(Response.ofError(null, null,
+                                    JSONRPCCodes.RPC_PARSE_ERROR,
+                                    je.getMessage()));
                         }
-                        out.put(singularResult);
-                    } catch (JSONException je) {
-                        out.put(Response.ofError(null, null,
-                                JSONRPCCodes.RPC_PARSE_ERROR,
-                                je.getMessage()));
                     }
+                    response = new Result(JSONRPCCodes.HTTP_SUCCESS, out);
+                } else {
+                    response = handleSingular(evaluator, new JSONObject(reqString));
                 }
-                response = new Result(JSONRPCCodes.HTTP_SUCCESS, out);
-            } else {
-                response = handleSingular(evaluator, new JSONObject(reqString));
+                logger.log(System.Logger.Level.INFO, "result:" + response.result);
+                var outBytes = (response.result == null) ? new byte[0] : response.result.toString().getBytes("UTF-8");
+                var outStream = exchange.getResponseBody();
+                exchange.getResponseHeaders().set("Content-Type", "application/json");
+                if (sessionStr != null) {
+                    exchange.getResponseHeaders().set(MCPConstants.MCP_SESSION_ID_STRING,
+                            sessionStr);
+                }
+                exchange.sendResponseHeaders(response.httpStatus, outBytes.length);
+                outStream.write(outBytes);
+                outStream.flush();
+                shouldTerminate = true;
+            } catch (Exception e) {
+                logger.log(System.Logger.Level.ERROR, "ERROR!");
+                logger.log(System.Logger.Level.ERROR, null, "{0}", e);
+                
+                shouldTerminate = true;
+                break;
             }
-            logger.log(System.Logger.Level.INFO, "result:" + response.result);
-            var outBytes = (response.result == null) ? new byte[0] : response.result.toString().getBytes("UTF-8");
-            var outStream = exchange.getResponseBody();
-            exchange.getResponseHeaders().set("Content-Type", "application/json");
-            if (sessionStr != null) {
-                exchange.getResponseHeaders().set(MCPConstants.MCP_SESSION_ID_STRING,
-                        sessionStr);
-            }
-            exchange.sendResponseHeaders(response.httpStatus, outBytes.length);
-            outStream.write(outBytes);
-            outStream.flush();
-            outStream.close();
-        } catch (Exception e) {
-            logger.log(System.Logger.Level.ERROR, "ERROR!");
-            logger.log(System.Logger.Level.ERROR, null, "{0}", e);            
-
-            exchange.close();
         }
+        exchange.close();
+
     }
 }
