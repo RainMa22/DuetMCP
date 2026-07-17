@@ -4,10 +4,10 @@ import com.sun.net.httpserver.HttpExchange;
 import com.sun.net.httpserver.HttpHandler;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.OutputStream;
 import java.net.HttpURLConnection;
 import java.util.List;
 import java.util.Map;
-import java.util.StringJoiner;
 import me.rainma22.DuetMCP.Exception.BadRequestException;
 import me.rainma22.DuetMCP.Exception.DuetMCPException;
 import me.rainma22.DuetMCP.Methods.MethodEvaluator;
@@ -37,13 +37,66 @@ public class MCPHandler implements HttpHandler {
 
     private class EventStreamSubHandler implements HttpHandler {
 
+        private static final Map<String, String> RES_HEADER_MAP
+                = Map.of(
+                        "Content-Type", "text/event-stream",
+                        "Cache-Control", "no-cache",
+                        "Connection", "keep-alive",
+                        "Transfer-Encoding", "chunked"
+                );
+
         @Override
         public void handle(HttpExchange exchange) throws IOException {
-            //https://modelcontextprotocol.io/specification/2025-06-18/basic/transports#listening-for-messages-from-the-server
-//            EventStream not supported yet
-            exchange.sendResponseHeaders(JSONRPCCodes.HTTP_METHOD_NOT_ALLOWED, 0);
-            logger.log(System.Logger.Level.WARNING, "event stream not supported");
-            exchange.close();
+
+            String id = exchange.getRequestHeaders()
+                    .getFirst(MCPConstants.MCP_SESSION_ID_STRING);
+            UserContext uctx = SessionManager.getInstance().getContextOf(id)
+                    .orElse(new UserContext());
+            InputStream in = exchange.getRequestBody();
+            OutputStream out = exchange.getResponseBody();
+            try {
+                logger.log(System.Logger.Level.INFO, "Received EventStream "
+                        + "Request {0} from {1}", exchange.getRequestMethod(), id);
+                if (exchange.getRequestMethod().equalsIgnoreCase("get")) {
+                    if (uctx.sessionId == null) {
+                        exchange.sendResponseHeaders(JSONRPCCodes.HTTP_INVALID_REQUEST, 0);
+                        logger.log(System.Logger.Level.INFO, "Unregistered User attempted to get events");
+                        exchange.close();
+                        return;
+                    }
+                } else {
+                    var evaluator = new MethodEvaluator(uctx);
+                    String reqString = new String(in.readAllBytes());
+                    Result response = handleSingular(evaluator, new JSONObject(reqString));
+                    if (response.result != null) {
+                        uctx.queueEvent(response.result.toString());
+                    }
+                }// POST
+                RES_HEADER_MAP.forEach((k, v)
+                        -> exchange.getResponseHeaders().add(k, v));
+                if (uctx.sessionId != null) {
+                    exchange.getRequestHeaders()
+                            .add(MCPConstants.MCP_SESSION_ID_STRING, uctx.sessionId.toString());
+                }
+                exchange.sendResponseHeaders(JSONRPCCodes.HTTP_SUCCESS, 0);
+
+                while (true) {
+                    while (uctx.eventQueue.hasEvent()) {
+                        var event = uctx.eventQueue.peek();
+                        out.write(event.toString().getBytes("UTF-8"));
+                        out.write("\n\n".getBytes("UTF-8"));
+                        out.flush();
+                        uctx.eventQueue.poll();
+                    }
+                    Thread.yield();
+                }
+            } catch (Exception e) {
+                logger.log(System.Logger.Level.ERROR, "UNKNOWN ERROR!");
+                logger.log(System.Logger.Level.ERROR, null, "{0}", e);
+            } finally {
+                exchange.close();
+            }
+
         }
 
     }
@@ -120,14 +173,12 @@ public class MCPHandler implements HttpHandler {
             return;
         }
         var acceptList = reqHeaders.getOrDefault("Accept", List.of());
-        StringJoiner sj = new StringJoiner("\n");
-        reqHeaders.forEach((k, vs) -> vs.forEach((v) -> sj.add(k + ": " + v)));
-        logger.log(System.Logger.Level.INFO, "Received {0} request with Header {1}",
-                reqMethod, sj);
-        if (acceptList.contains("application/json")) {
-            jsonHandler.handle(exchange);
-            return;
-        } else if (acceptList.contains("text/event-stream")) {
+//        StringJoiner sj = new StringJoiner("\n");
+//        reqHeaders.forEach((k, vs) -> vs.forEach((v) -> sj.add(k + ": " + v)));
+//        logger.log(System.Logger.Level.INFO, "Received {0} request with Header {1}",
+//                reqMethod, sj);
+        //prefer event stream over JSONRPC as it appears to be more efficient
+        if (acceptList.contains("text/event-stream")) {
             eventStreamHandler.handle(exchange);
             return;
         } else {
