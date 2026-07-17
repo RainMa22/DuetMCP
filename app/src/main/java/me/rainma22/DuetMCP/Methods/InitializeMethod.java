@@ -1,6 +1,7 @@
 package me.rainma22.DuetMCP.Methods;
 
 import java.util.List;
+import static me.rainma22.DuetMCP.Utils.ServerInfo.SUPPORTED_VERSIONS;
 import org.json.JSONObject;
 
 public class InitializeMethod extends Method {
@@ -22,11 +23,5 @@ public class InitializeMethod extends Method {
     public String latestVersion() {
         return SUPPORTED_VERSIONS.getLast();
     }
-    private static final List<String> SUPPORTED_VERSIONS = List.of(
-            "2024-11-05",
-            "2025-03-26",
-            "2025-06-18",
-            "2025-11-25",
-            "2026-07-28");
 
 }
