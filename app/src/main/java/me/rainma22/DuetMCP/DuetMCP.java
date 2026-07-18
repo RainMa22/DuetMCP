@@ -12,6 +12,8 @@ import java.nio.file.Path;
 import java.text.MessageFormat;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.Executors;
+import java.util.concurrent.ThreadFactory;
 import me.rainma22.DuetMCP.Plugins.Plugin;
 import me.rainma22.DuetMCP.Plugins.PluginManager;
 import me.rainma22.DuetMCP.Tools.builtins.fetch.InternetFetchToolPlugin;
@@ -64,7 +66,8 @@ public class DuetMCP {
         InetSocketAddress address = new InetSocketAddress(port);
         HttpServer server = HttpServer.create(address, 0);
         server.createContext("/mcp", new MCPHandler());
-        server.setExecutor((r) -> Thread.ofVirtual().start(r));
+        ThreadFactory factory = Thread.ofVirtual().name("DuetMCP-", 0).factory();
+        server.setExecutor(Executors.newThreadPerTaskExecutor(factory));
         server.start();
         logger.log(Logger.Level.INFO, "server started on port: " + port);
 
