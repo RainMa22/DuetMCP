@@ -1,5 +1,6 @@
 package me.rainma22.DuetMCP.Utils;
 
+import java.lang.ref.WeakReference;
 import java.util.Map;
 import java.util.Optional;
 import java.util.UUID;
@@ -28,12 +29,12 @@ public class SessionManager {
         return manager;
     }
 
-    private Map<String, UserContext> sessionMap = new WeakHashMap<>(512);
+    private Map<UUID, UserContext> sessionMap = new WeakHashMap<>(512);
     
     public UUID newSession(UserContext ctx) {
         var id = UUID.randomUUID();
-        ctx.sessionId = id;
-        sessionMap.put(id.toString(), ctx);
+        ctx.sessionId = new WeakReference<>(id);
+        sessionMap.put(id, ctx);
         return id;
     }
     
@@ -41,7 +42,8 @@ public class SessionManager {
         if (id == null) {
             return Optional.empty();
         }
-        return Optional.ofNullable(sessionMap.getOrDefault(id, null));
+        return Optional.ofNullable(sessionMap.getOrDefault(
+                UUID.fromString(id), null));
     }
     
 }

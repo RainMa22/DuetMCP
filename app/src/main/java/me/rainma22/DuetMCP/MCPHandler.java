@@ -37,6 +37,14 @@ public class MCPHandler implements HttpHandler {
 
     private class EventStreamSubHandler implements HttpHandler {
 
+        //TODO: make this static var below configurable
+        public static final int RETRY_MILLISECOND = 2200;
+        //TODO: make this static var below configurable
+        public static final int MAX_SPINWAIT_LOOPTIMES = 22;
+
+        public static final String TERMINATION_NOTICE = "data: \n"
+                + "retry: " + String.valueOf(RETRY_MILLISECOND)
+                + "\n\n";
         private static final Map<String, String> RES_HEADER_MAP
                 = Map.of(
                         "Content-Type", "text/event-stream",
@@ -58,7 +66,7 @@ public class MCPHandler implements HttpHandler {
                 logger.log(System.Logger.Level.INFO, "Received EventStream "
                         + "Request {0} from {1}", exchange.getRequestMethod(), id);
                 if (exchange.getRequestMethod().equalsIgnoreCase("get")) {
-                    if (uctx.sessionId == null) {
+                    if (uctx.sessionId.refersTo(null)) {
                         exchange.sendResponseHeaders(JSONRPCCodes.HTTP_INVALID_REQUEST, 0);
                         logger.log(System.Logger.Level.INFO, "Unregistered User attempted to get events");
                         exchange.close();
@@ -74,26 +82,36 @@ public class MCPHandler implements HttpHandler {
                 }// POST
                 RES_HEADER_MAP.forEach((k, v)
                         -> exchange.getResponseHeaders().add(k, v));
-                if (uctx.sessionId != null) {
+                var uid = uctx.sessionId.get(); 
+                if (uid != null) {
                     exchange.getRequestHeaders()
-                            .add(MCPConstants.MCP_SESSION_ID_STRING, uctx.sessionId.toString());
+                            .add(MCPConstants.MCP_SESSION_ID_STRING, 
+                                    uid.toString());
                 }
                 exchange.sendResponseHeaders(JSONRPCCodes.HTTP_SUCCESS, 0);
-
-                while (true) {
+                int spinwaitTimes = 0;
+                while (++spinwaitTimes < MAX_SPINWAIT_LOOPTIMES) {
                     while (uctx.eventQueue.hasEvent()) {
+                        spinwaitTimes = 0; //reset spinwait times
                         var event = uctx.eventQueue.peek();
                         out.write(event.toString().getBytes("UTF-8"));
-                        out.write("\n\n".getBytes("UTF-8"));
+                        out.write("\n".getBytes("UTF-8"));
                         out.flush();
                         uctx.eventQueue.poll();
                     }
+                    if (!uctx.sessionId.refersTo(null)) {
+                        // if user context is freed/not initialized, don't ask it to loop.
+                        break;
+                    }
                     Thread.yield();
                 }
+                out.write(TERMINATION_NOTICE.getBytes("UTF-8"));
             } catch (Exception e) {
-                logger.log(System.Logger.Level.ERROR, "UNKNOWN ERROR!");
+                logger.log(System.Logger.Level.ERROR, "unknown exception received, closing connection...");
                 logger.log(System.Logger.Level.ERROR, null, "{0}", e);
             } finally {
+                logger.log(System.Logger.Level.INFO, "Kicked {0} from getting events.",
+                        String.valueOf(uctx.sessionId.get()));
                 exchange.close();
             }
 
