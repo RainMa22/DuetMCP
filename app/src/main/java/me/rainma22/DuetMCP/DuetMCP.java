@@ -47,7 +47,7 @@ public class DuetMCP {
             logger.log(System.Logger.Level.INFO,
                     "loading " + classname.toString());
             try {
-                Class<? extends Plugin> c = (Class<? extends ToolPlugin>) ClassLoader.getSystemClassLoader()
+                Class<? extends Plugin> c = (Class<? extends Plugin>) ClassLoader.getSystemClassLoader()
                         .loadClass(classname.toString());
                 c.getDeclaredConstructor()
                         .newInstance()
