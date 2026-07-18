@@ -3,6 +3,7 @@
  */
 package me.rainma22.DuetMCP;
 
+import me.rainma22.DuetMCP.mcphandler.MCPHandler;
 import com.sun.net.httpserver.HttpServer;
 import java.io.IOException;
 import java.lang.System.Logger;
@@ -14,7 +15,6 @@ import java.util.Map;
 import me.rainma22.DuetMCP.Plugins.Plugin;
 import me.rainma22.DuetMCP.Plugins.PluginManager;
 import me.rainma22.DuetMCP.Tools.builtins.fetch.InternetFetchToolPlugin;
-import me.rainma22.DuetMCP.Tools.ToolPlugin;
 import me.rainma22.DuetMCP.Tools.builtins.time.TimeToolPlugin;
 import me.rainma22.DuetMCP.Utils.ConfigurationManager;
 import me.rainma22.DuetMCP.Utils.SessionManager;

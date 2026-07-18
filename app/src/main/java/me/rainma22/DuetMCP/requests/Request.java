@@ -1,4 +1,4 @@
-package me.rainma22.DuetMCP;
+package me.rainma22.DuetMCP.requests;
 
 import me.rainma22.DuetMCP.Exception.BadRequestException;
 import me.rainma22.DuetMCP.Methods.Method;

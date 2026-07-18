@@ -8,6 +8,7 @@ package me.rainma22.DuetMCP.Utils;
 public class JSONRPCCodes {
 
     public static final int HTTP_SUCCESS = 200;
+    public static int HTTP_ACCEPTED = 202;
     public static final int HTTP_NOTIFICATION_SUCCESS = 204;
 
     public static final int HTTP_PARSE_ERROR = 500;
