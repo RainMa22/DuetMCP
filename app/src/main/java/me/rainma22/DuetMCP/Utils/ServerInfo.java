@@ -17,6 +17,7 @@ public class ServerInfo {
     public static final JSONObject CAPABILITY_JSON
             = new JSONObject(Map.of(
                     "tools", Map.of("listChanged", true)
+            //        "prompts", Map.of("listChanged", true)
             //                    //we don't really support tasks yet.
             //                    ,"tasks", Map.of(
             //                            "requests", Map.of(

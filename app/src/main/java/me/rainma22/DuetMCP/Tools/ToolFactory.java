@@ -5,17 +5,22 @@ import java.util.HashMap;
 import java.util.Map;
 import me.rainma22.DuetMCP.Exception.BadRequestException;
 import me.rainma22.DuetMCP.UserContext;
+import me.rainma22.DuetMCP.Utils.SessionManager;
+import me.rainma22.DuetMCP.event.ServerNotification;
 import org.json.JSONObject;
 
 /**
  *
  */
 public class ToolFactory {
-
+    
     private static final Map<String, ToolEntry> TOOL_MAP = new HashMap<>();
-
+    private static final ServerNotification TOOLCHANGED_NOTIF = 
+            new ServerNotification("notifications/tools/listChanged");
+    
     public static void registerTool(String name, Map<String, Object> info, Tool t) {
         TOOL_MAP.put(name, new ToolEntry(info, t));
+        SessionManager.getInstance().sendEvents(TOOLCHANGED_NOTIF);
     }
     private static final ToolEntry DEFALT_TOOL_ENTRY = new ToolEntry(Map.of(), new Tool() {
         @Override

@@ -6,6 +6,7 @@ import java.util.Optional;
 import java.util.UUID;
 import java.util.WeakHashMap;
 import me.rainma22.DuetMCP.UserContext;
+import me.rainma22.DuetMCP.event.ServerNotification;
 
 /**
  *
@@ -46,4 +47,7 @@ public class SessionManager {
                 UUID.fromString(id), null));
     }
     
+    public void sendEvents(ServerNotification notif){
+        sessionMap.forEach((ignored, uctx) -> uctx.queueEvent(notif.methodString()));
+    }
 }
