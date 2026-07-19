@@ -42,7 +42,7 @@ public class JsonSubHandler implements SubHandler {
             }
             var uid = uctx.sessionId.get();
             if (uid != null) {
-                exchange.getRequestHeaders()
+                exchange.getResponseHeaders()
                         .add(MCPConstants.MCP_SESSION_ID_STRING,
                                 uid.toString());
             }

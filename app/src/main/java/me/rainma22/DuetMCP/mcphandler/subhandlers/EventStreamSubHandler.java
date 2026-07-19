@@ -22,12 +22,12 @@ import org.json.JSONObject;
  *
  */
 public class EventStreamSubHandler implements SubHandler {
-    
+
     private static final System.Logger LOGGER = System.getLogger(EventStreamSubHandler.class.getName());
-    
+
     private UserContext uctx;
     private RequestProcessor processor;
-    
+
     public EventStreamSubHandler(UserContext uctx) {
         this.uctx = uctx;
         this.processor = new RequestProcessor(new MethodEvaluator(uctx));
@@ -36,7 +36,7 @@ public class EventStreamSubHandler implements SubHandler {
     public static final int RETRY_MILLISECOND = 2200;
     //TODO: make this static var below configurable
     public static final int MAX_SPINWAIT_LOOPTIMES = 22;
-    
+
     public static final String TERMINATION_NOTICE = "data: \n"
             + "retry: " + String.valueOf(RETRY_MILLISECOND)
             + "\n\n";
@@ -47,7 +47,7 @@ public class EventStreamSubHandler implements SubHandler {
                     "Connection", "keep-alive",
                     "Transfer-Encoding", "chunked"
             );
-    
+
     @Override
     public void handle(HttpExchange exchange) throws IOException {
         InputStream in = exchange.getRequestBody();
@@ -79,7 +79,7 @@ public class EventStreamSubHandler implements SubHandler {
                     -> exchange.getResponseHeaders().add(k, v));
             id = uctx.sessionId.get(); //update id in case of initialize
             if (id != null) {
-                exchange.getRequestHeaders()
+                exchange.getResponseHeaders()
                         .add(MCPConstants.MCP_SESSION_ID_STRING,
                                 id.toString());
             }
@@ -110,7 +110,7 @@ public class EventStreamSubHandler implements SubHandler {
                     String.valueOf(uctx.sessionId.get()));
             exchange.close();
         }
-        
+
     }
-    
+
 }
