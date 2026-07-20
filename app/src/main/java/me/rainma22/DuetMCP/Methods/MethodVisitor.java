@@ -14,6 +14,10 @@ public interface MethodVisitor<T, E extends Exception> {
     T visit(Notification ni) throws E;
 
     T visit(PingMethod pm) throws E;
+    
+    T visit(PromptGetMethod tgm) throws E;
+
+    T visit(PromptListMethod tlm) throws E;
 
     T visit(ToolsListMethod tlm) throws E;
 

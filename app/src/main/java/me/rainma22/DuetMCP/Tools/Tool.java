@@ -1,9 +1,8 @@
 package me.rainma22.DuetMCP.Tools;
 
-import me.rainma22.DuetMCP.Exception.BadRequestException;
 import me.rainma22.DuetMCP.Exception.DuetMCPException;
 import me.rainma22.DuetMCP.UserContext;
-import me.rainma22.DuetMCP.Functions.ThrowingBiFunction;
+import me.rainma22.DuetMCP.interfaces.ThrowingBiFunction;
 import org.json.JSONObject;
 
 /**

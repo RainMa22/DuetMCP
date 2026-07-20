@@ -13,6 +13,7 @@ import me.rainma22.DuetMCP.Methods.MethodEvaluator;
 import me.rainma22.DuetMCP.UserContext;
 import me.rainma22.DuetMCP.Utils.JSONRPCCodes;
 import me.rainma22.DuetMCP.Utils.MCPConstants;
+import me.rainma22.DuetMCP.Utils.ResourceRegistries;
 import me.rainma22.DuetMCP.requests.RequestProcessor;
 import me.rainma22.DuetMCP.requests.Result;
 import org.json.JSONArray;
@@ -28,9 +29,9 @@ public class EventStreamSubHandler implements SubHandler {
     private UserContext uctx;
     private RequestProcessor processor;
 
-    public EventStreamSubHandler(UserContext uctx) {
+    public EventStreamSubHandler(ResourceRegistries rr, UserContext uctx) {
         this.uctx = uctx;
-        this.processor = new RequestProcessor(new MethodEvaluator(uctx));
+        this.processor = new RequestProcessor(new MethodEvaluator(rr,uctx));
     }
     //TODO: make this static var below configurable
     public static final int RETRY_MILLISECOND = 2200;

@@ -16,17 +16,21 @@ import java.util.concurrent.Executors;
 import java.util.concurrent.ThreadFactory;
 import me.rainma22.DuetMCP.Plugins.Plugin;
 import me.rainma22.DuetMCP.Plugins.PluginManager;
+import me.rainma22.DuetMCP.Tools.ToolRegistry;
 import me.rainma22.DuetMCP.Tools.builtins.fetch.InternetFetchToolPlugin;
 import me.rainma22.DuetMCP.Tools.builtins.time.TimeToolPlugin;
 import me.rainma22.DuetMCP.Utils.ConfigurationManager;
+import me.rainma22.DuetMCP.Utils.ResourceRegistries;
 import me.rainma22.DuetMCP.Utils.SessionManager;
+import me.rainma22.DuetMCP.prompts.PromptRegistry;
+import me.rainma22.DuetMCP.prompts.builtin.CurrentTimePromptPlugin;
 
 public class DuetMCP {
 
     private static final Map DEFAULT_CONFIG = Map.of("port", 9090,
-            "loadBuiltinTools", List.of(
-                    InternetFetchToolPlugin.class.getCanonicalName(),
-                    TimeToolPlugin.class.getCanonicalName()),
+            "loadBuiltinTools", List.of(InternetFetchToolPlugin.class.getCanonicalName(),
+                    TimeToolPlugin.class.getCanonicalName(),
+                    CurrentTimePromptPlugin.class.getCanonicalName()),
             "Session_maxConcurrentEntry", 512
     );
 
@@ -40,7 +44,10 @@ public class DuetMCP {
         // set Session mapping size here
         var nSessionMapping = conf.getInt("Session_maxConcurrentEntry");
         SessionManager.setNumMappings(nSessionMapping);
-        PluginManager.getInstance().loadPlugins(Path.of(".", "plugin"));
+        ResourceRegistries registries = new ResourceRegistries(new PromptRegistry(),
+                new ToolRegistry());
+        PluginManager pluginManager = new PluginManager(registries);
+        pluginManager.loadPlugins(Path.of(".", "plugin"));
 
         for (var classname : conf.getJSONArray("loadBuiltinTools")) {
             if (classname == null) {
@@ -53,7 +60,7 @@ public class DuetMCP {
                         .loadClass(classname.toString());
                 c.getDeclaredConstructor()
                         .newInstance()
-                        .onLoad();
+                        .onLoad(registries);
                 logger.log(System.Logger.Level.INFO,
                         "loaded " + classname.toString());
             } catch (Exception ex) {
@@ -65,7 +72,7 @@ public class DuetMCP {
 
         InetSocketAddress address = new InetSocketAddress(port);
         HttpServer server = HttpServer.create(address, 0);
-        server.createContext("/mcp", new MCPHandler());
+        server.createContext("/mcp", new MCPHandler(registries));
         ThreadFactory factory = Thread.ofVirtual().name("DuetMCP-", 0).factory();
         server.setExecutor(Executors.newThreadPerTaskExecutor(factory));
         server.start();

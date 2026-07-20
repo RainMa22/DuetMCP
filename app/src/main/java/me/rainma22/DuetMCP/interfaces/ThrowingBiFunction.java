@@ -1,4 +1,4 @@
-package me.rainma22.DuetMCP.Functions;
+package me.rainma22.DuetMCP.interfaces;
 
 /**
  *

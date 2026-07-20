@@ -8,18 +8,18 @@ import java.nio.file.Path;
 import java.util.Arrays;
 import java.util.jar.JarFile;
 import java.util.jar.Manifest;
-import me.rainma22.DuetMCP.Tools.ToolPlugin;
+import me.rainma22.DuetMCP.Utils.ResourceRegistries;
 
 /**
  *
  */
 public class PluginManager {
 
-    private static PluginManager instance = null;
+    private ResourceRegistries registries;
     private final System.Logger LOGGER = System.getLogger(PluginManager.class.getName());
 
-    private PluginManager() {
-
+    public PluginManager(ResourceRegistries registries) {
+        this.registries = registries;
     }
 
     public void loadPlugins(Path pluginPath) {
@@ -45,12 +45,13 @@ public class PluginManager {
                 URLClassLoader loader = new URLClassLoader(
                         new URL[]{f.toURI().toURL()},
                         this.getClass().getClassLoader());
-                Class<ToolPlugin> c = (Class<ToolPlugin>) loader.loadClass(mainClassStr);
-                c.getDeclaredConstructor().newInstance().onLoad();
+                Class<Plugin> c = (Class<Plugin>) loader.loadClass(mainClassStr);
+                
+                c.getDeclaredConstructor().newInstance().onLoad(registries);
 
                 LOGGER.log(System.Logger.Level.INFO, "loaded file: "
                         + f.getName());
-            } catch (Exception e) {
+            } catch (Exception | Error e) {
                 Arrays.asList(e.getStackTrace()).forEach(st
                         -> LOGGER.log(System.Logger.Level.WARNING, st)
                 );
@@ -58,13 +59,5 @@ public class PluginManager {
                         String.format("Skipping loading file: %s", f.getName()));
             }
         }
-    }
-
-    public static PluginManager getInstance() {
-
-        if (instance == null) {
-            instance = new PluginManager();
-        }
-        return instance;
     }
 }

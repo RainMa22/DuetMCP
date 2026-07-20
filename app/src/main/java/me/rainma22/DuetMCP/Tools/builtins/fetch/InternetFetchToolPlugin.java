@@ -2,10 +2,10 @@ package me.rainma22.DuetMCP.Tools.builtins.fetch;
 
 import java.util.List;
 import java.util.Map;
-import me.rainma22.DuetMCP.Tools.ToolFactory;
 import me.rainma22.DuetMCP.Tools.ToolPlugin;
 import me.rainma22.DuetMCP.Utils.ConfigurationManager;
-import org.json.JSONObject;
+import me.rainma22.DuetMCP.Utils.ResourceRegistries;
+import me.rainma22.DuetMCP.Utils.Tuple;
 
 /**
  *
@@ -15,7 +15,7 @@ public class InternetFetchToolPlugin implements ToolPlugin {
     private System.Logger logger = System.getLogger(this.getClass().getName());
 
     @Override
-    public void onLoad() {
+    public void onLoad(ResourceRegistries registries) {
         final Map<String, Object> INFO = Map.of(
                 "name", "duet_directInternetFetch",
                 "title", "Web Resource Fetching",
@@ -35,6 +35,7 @@ public class InternetFetchToolPlugin implements ToolPlugin {
         final Map<String, Object> DEFAULT_CONFIG =
                 Map.of("allow local ip access", false);
         var conf = ConfigurationManager.ofClass(this.getClass()).getConfig(DEFAULT_CONFIG);
-        ToolFactory.registerTool(INFO.get("name").toString(), INFO, new DirectFetchTool(conf));
+        registries.toolRegistry()
+                .register(INFO.get("name").toString(), new Tuple<>(INFO, new DirectFetchTool(conf)));
     }
 }

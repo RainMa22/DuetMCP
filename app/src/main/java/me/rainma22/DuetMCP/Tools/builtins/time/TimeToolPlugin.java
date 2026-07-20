@@ -7,9 +7,10 @@ import java.util.List;
 import java.util.Map;
 import me.rainma22.DuetMCP.Exception.BadRequestException;
 import me.rainma22.DuetMCP.Tools.Tool;
-import me.rainma22.DuetMCP.Tools.ToolFactory;
 import me.rainma22.DuetMCP.Tools.ToolPlugin;
 import me.rainma22.DuetMCP.UserContext;
+import me.rainma22.DuetMCP.Utils.ResourceRegistries;
+import me.rainma22.DuetMCP.Utils.Tuple;
 import org.json.JSONObject;
 
 /*
@@ -40,7 +41,7 @@ public class TimeToolPlugin implements ToolPlugin {
     }
 
     @Override
-    public void onLoad() {
+    public void onLoad(ResourceRegistries registries) {
         final Map<String, Object> INFO = Map.of(
                 "name", "duet_getCurrentTime",
                 "title", "get Current time",
@@ -83,6 +84,8 @@ public class TimeToolPlugin implements ToolPlugin {
                                         + "| X | Time zone | ISO 8601 time zone | -08; -0800; -08:00 |"))),
                 "required", List.of("")
         );
-        ToolFactory.registerTool(INFO.get("name").toString(), INFO, new TimeTool());
+        registries.toolRegistry()
+                .register(INFO.get("name").toString(), 
+                        new Tuple<>(INFO, new TimeTool()));
     }
 }

@@ -6,6 +6,7 @@ import me.rainma22.DuetMCP.Methods.MethodEvaluator;
 import me.rainma22.DuetMCP.UserContext;
 import me.rainma22.DuetMCP.Utils.JSONRPCCodes;
 import me.rainma22.DuetMCP.Utils.MCPConstants;
+import me.rainma22.DuetMCP.Utils.ResourceRegistries;
 import me.rainma22.DuetMCP.requests.RequestProcessor;
 import me.rainma22.DuetMCP.requests.Result;
 import org.json.JSONArray;
@@ -20,9 +21,9 @@ public class JsonSubHandler implements SubHandler {
     private UserContext uctx;
     private RequestProcessor processor;
 
-    public JsonSubHandler(UserContext uctx) {
+    public JsonSubHandler(ResourceRegistries rr, UserContext uctx) {
         this.uctx = uctx;
-        this.processor = new RequestProcessor(new MethodEvaluator(uctx));
+        this.processor = new RequestProcessor(new MethodEvaluator(rr, uctx));
     }
 
     @Override

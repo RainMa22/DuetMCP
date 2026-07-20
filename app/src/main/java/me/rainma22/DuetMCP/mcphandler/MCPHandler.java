@@ -7,6 +7,7 @@ import java.util.List;
 import java.util.Map;
 import me.rainma22.DuetMCP.UserContext;
 import me.rainma22.DuetMCP.Utils.MCPConstants;
+import me.rainma22.DuetMCP.Utils.ResourceRegistries;
 import me.rainma22.DuetMCP.Utils.SessionManager;
 import me.rainma22.DuetMCP.mcphandler.subhandlers.SubHandlerRouter;
 
@@ -14,7 +15,10 @@ import me.rainma22.DuetMCP.mcphandler.subhandlers.SubHandlerRouter;
  * MCP endpoint base-class
  */
 public class MCPHandler implements HttpHandler {
-
+    private SubHandlerRouter subHandlerRouter;
+    public MCPHandler(ResourceRegistries rr){
+        subHandlerRouter = new SubHandlerRouter(rr);
+    }
 //    private final System.Logger logger = System.getLogger(this.getClass().getName());
     private static final Map<String, String> CORS_HEADER = Map.of(
             "Access-Control-Allow-Origin", "*",
@@ -33,7 +37,7 @@ public class MCPHandler implements HttpHandler {
         UserContext ctx = SessionManager.getInstance().getContextOf(sessionStr)
                 .orElse(new UserContext());
         var acceptList = reqHeaders.getOrDefault("Accept", List.of());
-        new SubHandlerRouter().route(reqMethod, acceptList, ctx)
+        subHandlerRouter.route(reqMethod, acceptList, ctx)
                 .handle(exchange);
     }
 }

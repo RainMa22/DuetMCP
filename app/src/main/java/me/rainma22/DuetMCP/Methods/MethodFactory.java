@@ -17,6 +17,8 @@ public class MethodFactory {
         registerMethod("initialize", (params) -> new InitializeMethod(params));
         registerMethod("notifications/initialized", (params) -> new NotificationInitialized(params));
         registerMethod("ping", (params)-> new PingMethod(params));
+        registerMethod("prompts/list", params -> new PromptListMethod(params));
+        registerMethod("prompts/get", params -> new PromptGetMethod(params));
         registerMethod("tools/call", params -> new ToolsCallMethod(params));
         registerMethod("tools/list", param -> new ToolsListMethod(param));
     }
