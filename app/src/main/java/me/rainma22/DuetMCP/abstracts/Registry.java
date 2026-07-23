@@ -13,7 +13,7 @@ import org.json.JSONObject;
  */
 public abstract class Registry<T> {
 
-    private final Map<String, Tuple<JSONObject, T>> map = new HashMap();
+    protected Map<String, Tuple<JSONObject, T>> map = new HashMap();
 
     protected abstract ServerNotification getUpdateNotif();
 
